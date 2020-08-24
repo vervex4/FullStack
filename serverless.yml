@@ -1,14 +1,12 @@
 service:
-  name: pdf
+  name: pdf-one-more
 
 plugins:
   - serverless-offline
-  - serverless-apigw-binary
-
 provider:
   name: aws
   runtime: nodejs10.x
-  region: eu-central-1
+  region: ap-south-1
   stage: ${opt:stage, 'development'}
   environment:
     ENV: ${self:provider.stage}
@@ -16,7 +14,7 @@ provider:
 custom:
   apigwBinary:
     types:
-      - '*/*'
+      - "*/*"
 
 functions:
   pdf:
@@ -29,3 +27,21 @@ functions:
           parameters:
             paths:
               yearMonth: true
+
+  numeng:
+    handler: numeng.numeng
+    events:
+      - http:
+          path: numeng
+          method: get
+          cors: true
+
+  getbycontentid:
+      handler: getbycontentid.getbycontentid
+      events:
+        - http:
+            path: getbycontentid/{contentid}/{lang}
+            method: get
+            cors: true
+            
+

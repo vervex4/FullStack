@@ -1,34 +1,20 @@
 'use strict'
 const chromium = require('chrome-aws-lambda')
-const pug = require('pug')
 const fs = require('fs')
 const path = require('path')
 
-const knex = require('./src/db')
+
 
 module.exports.pdf = async (event, context) => {
-  const yearMonth = ((event || {}).pathParameters || {}).yearMonth || ''
-  const year = yearMonth.length == 7 && yearMonth.substring(0, 4)
-  const month = yearMonth.length == 7 && yearMonth.substring(5, 6)
 
-  // Select a date
-  const selDate = new Date(year, month)
-  const filter = {
-    month: selDate.toLocaleString('en', { month: 'long' }),
-    year: selDate.getFullYear()
-  }
+  let baseUrl ="https://securecosmic.azurewebsites.net/api/AstroBasicNumbers/GetHtmlByReport?";
 
-  // Fetch data with knex
-  const result = await knex
-    .select()
-    .from('sales')
-    .where({
-      year: filter.year,
-      month: selDate.getMonth() + 1
-    })
+  const { reportId,selectedFiled,langs } = event.queryStringParameters;
+  // const {  } = event.queryStringParameters;
+  // const {  } = event.queryStringParameters;
 
-  const template = pug.compileFile('./src/template.pug')
-  const html = template({ ...filter, result })
+  let navURL = baseUrl+ "reportId="+reportId+"&langs="+langs+"&selectedFiled="+ selectedFiled;
+
 
   let browser = null
   try {
@@ -39,19 +25,48 @@ module.exports.pdf = async (event, context) => {
       headless: chromium.headless
     })
 
-    const page = await browser.newPage()
-    page.setContent(html)
+    const page = await browser.newPage();
+
+    page.setDefaultTimeout (70*1000) ;
+
+    await page.setViewport({width:1440 , height:900 , deviceScaleFactor:2  });
+
+    
+    //await page.goto("https://authserviceastrobasic.azurewebsites.net/api/AstroBasicNumbers/GetHtmlByReport?reportId=15512a46-b33a-44be-aa5a-2f43264bad2c&langs=2&selectedFiled=XXX,LPN");
+
+    navURL= 'https://appav.azurewebsites.net/#/numerology-matching-full-html?ReportId=ABNumMatchb20d4e824dd44cac989167140c55b636&Lang=2';
+  
+    // const htmlResp =await page.goto(navURL,{
+    //   waitUntil: ["networkidle0"]
+    // });
+
+    const htmlResp =await page.goto(navURL) ;
+
+    await page.emulateMedia('screen');
+
+    await page.waitFor(60000);
+
+    await page.setContent((await htmlResp.buffer()).toString('utf8'));
+
+    // const html = await page.content();
+    // console.log(html);
+// var csb = [];
+
+// csb.push
+
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
     })
 
+   
+
     // TODO: Response with PDF (or error if something went wrong )
     const response = {
       headers: {
         'Content-type': 'application/pdf',
-        'content-disposition': 'attachment; filename=test.pdf'
+        // 'content-disposition': 'attachment; filename=test.pdf'
       },
       statusCode: 200,
       body: pdf.toString('base64'),
