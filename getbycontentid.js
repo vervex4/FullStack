@@ -2,11 +2,10 @@
 const { MongoClient } = require("mongodb");
 
 module.exports.getbycontentid = async (event, context) => {
-
-  let result="";
+  let result = "";
   console.log("input params");
   console.log(event.pathParameters.contentid);
-  
+
   let selectedLang = "NumberDetailsEnglish";
   if (event.pathParameters.lang == 1) selectedLang = "NumberDetailsHindi";
 
@@ -18,109 +17,95 @@ module.exports.getbycontentid = async (event, context) => {
     useUnifiedTopology: true,
   });
   try {
+    if (event.pathParameters.contentid.includes(",")) {
+      let searchWord = "{ ";
 
-    if(event.pathParameters.contentid.includes(','))
-    {
-        await client.connect();
-        // let result2 = client
-        // .db("AstroBasic")
-        // .collection(selectedLang)
-        // .find( {
-        //   'ContentID': {
-        //     '$in': [
-        //       'LPN1', 'LPN2'
-        //     ]
-        //   }
-        // } );
+      event.pathParameters.contentid
+        .split(",")
+        .forEach((e) => (searchWord += `'${e}',`));
 
-        client.db("AstroBasic")
-        .collection(selectedLang).find({
-          'ContentID': {
-            '$in': [
-              'LPN1', 'LPN2'
-            ]
-          }
-        }).toArray(function(err, result) {
-          if (err) throw err;
-          client.close();
+      let newsearchWord = searchWord + " }";
 
-          if (result){
-            const response = {
-              statusCode: 200,
-              headers: {
-                  'Access-Control-Allow-Origin': '*',
-                  'Access-Control-Allow-Credentials': true,
-                },
-              body: JSON.stringify(result),
-              
-            };
-            context.succeed(response);
-          }
-            else{
-      
-              const response = {
-                  statusCode: 404,
-                  headers: {
-                      'Access-Control-Allow-Origin': '*',
-                      'Access-Control-Allow-Credentials': true,
-                      "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
-                    },
-                  body: JSON.stringify("{ errorMessage: 'No Description found!'}"),
-                  
-                };
-                context.succeed(response);
-      
-            }
-
-          
-        });
-             
-
-    }else{
+      console.log("search term " + newsearchWord);
       await client.connect();
-      const result1 = await client
-      .db("AstroBasic")
-      .collection(selectedLang)
-      .findOne({
-        ContentID: event.pathParameters.contentid,
-      });
-      result= result1;
+      var resultSet = await client
+        .db("AstroBasic")
+        .collection(JSON.parse(newsearchWord))
+        .find({
+          ContentID: {
+            $in: [newsearchWord],
+          },
+        })
+        .toArray();
+
       await client.close();
-      if (result){
+
+      const resp = {
+        Description: "",
+      };
+
+      if (resultSet) {
+        resultSet.forEach((doc, idx, array) => {
+          resp.Description +=
+            doc.Title + "<br>" + doc.Description + "<br><br><hr>";
+
+          console.log(doc.Description);
+        });
+
         const response = {
           statusCode: 200,
           headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Credentials': true,
-            },
-          body: JSON.stringify(result),
-          
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": true,
+          },
+          body: JSON.stringify(resp),
+        };
+        context.succeed(response);
+      } else {
+        const response = {
+          statusCode: 404,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": true,
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+          },
+          body: JSON.stringify("{ errorMessage: 'No Description found!'}"),
         };
         context.succeed(response);
       }
-        else{
-  
-          const response = {
-              statusCode: 404,
-              headers: {
-                  'Access-Control-Allow-Origin': '*',
-                  'Access-Control-Allow-Credentials': true,
-                  "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
-                },
-              body: JSON.stringify("{ errorMessage: 'No Description found!'}"),
-              
-            };
-            context.succeed(response);
-  
-        }
-
+    } else {
+      await client.connect();
+      const result1 = await client
+        .db("AstroBasic")
+        .collection(selectedLang)
+        .findOne({
+          ContentID: event.pathParameters.contentid,
+        });
+      result = result1;
+      await client.close();
+      if (result) {
+        const response = {
+          statusCode: 200,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": true,
+          },
+          body: JSON.stringify(result),
+        };
+        context.succeed(response);
+      } else {
+        const response = {
+          statusCode: 404,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": true,
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+          },
+          body: JSON.stringify("{ errorMessage: 'No Description found!'}"),
+        };
+        context.succeed(response);
+      }
     }
-
-   
-
- 
-
-   
   } catch (e) {
     console.error(e);
   } finally {
