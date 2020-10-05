@@ -18,22 +18,15 @@ module.exports.getbycontentid = async (event, context) => {
   });
   try {
     if (event.pathParameters.contentid.includes(",")) {
-      let searchWord = "{ ";
-
-      event.pathParameters.contentid
-        .split(",")
-        .forEach((e) => (searchWord += `'${e}',`));
-
-      let newsearchWord = searchWord + " }";
-
-      console.log("search term " + newsearchWord);
+      const newsearchWord = event.pathParameters.contentid.split(",");
+     
       await client.connect();
       var resultSet = await client
         .db("AstroBasic")
-        .collection(JSON.parse(newsearchWord))
+        .collection(selectedLang)
         .find({
           ContentID: {
-            $in: [newsearchWord],
+            $in: newsearchWord,
           },
         })
         .toArray();

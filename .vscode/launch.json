@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+
       {
         "name": "Debug",
         "type": "node",
@@ -9,6 +10,59 @@
         "runtimeExecutable": "npm",
         "runtimeArgs": ["run-script", "debug"],
         "port": 9229 
+      },
+      {
+        "type": "node",
+        "request": "launch",
+        "name": "Launch Serverless Offline",
+        "program": "${workspaceRoot}/node_modules/serverless/bin/serverless",
+        "args": [
+          "offline",
+          "--noTimeout",
+          "--dontPrintOutput",
+          "--stage=local",
+          "-P",
+          "4000",
+          "--aws-profile=NewABD"
+        ],
+        "sourceMaps": true,
+        "runtimeArgs": ["--lazy"],
+        "outFiles": ["${workspaceFolder}/.webpack/**/*.js"],
+        "protocol": "inspector",
+        "runtimeExecutable": "node",
+        "env": {
+          // Here we set some environment vars that should be set locally.
+          // They can and will overwrite the ones coming from your serverless.yml
+        },
+        "windows": {
+          "program": "${workspaceRoot}\\node_modules\\serverless\\bin\\serverless"
+        }
+      }
+      {
+        "type": "node",
+        "request": "launch",
+        "name": "Launch Lambda",
+        "program": "${workspaceRoot}/node_modules/serverless/bin/serverless",
+        "args": [
+          "invoke",
+          "local",
+          "-f",
+          "getbycontentid",
+          "--data",
+          "{ event : {pathParameters : {contentid :'LPN1'} }}"
+        ],
+        "sourceMaps": true,
+        "runtimeArgs": ["--lazy"],
+        "outFiles": ["${workspaceFolder}/.webpack/**/*.js"],
+        "protocol": "inspector",
+        "runtimeExecutable": "node",
+        "env": {
+          // Here we set some environment vars that should be set locally.
+          // They can and will overwrite the ones coming from your serverless.yml
+        },
+        "windows": {
+          "program": "${workspaceRoot}\\node_modules\\serverless\\bin\\serverless"
+        }
       }
     ]
   }
