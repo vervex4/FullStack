@@ -5,7 +5,7 @@ plugins:
   - serverless-offline
 provider:
   name: aws
-  runtime: nodejs10.x
+  runtime: nodejs12.x
   region: ap-south-1
   stage: ${opt:stage, 'development'}
   environment:
@@ -17,16 +17,22 @@ custom:
       - "*/*"
 
 functions:
-  pdf:
-    handler: pdf.pdf
+  buildpdf:
+    handler: buildpdf.buildpdf
     events:
       - http:
-          path: pdf/{yearMonth}
-          method: get
+          path: buildpdf
+          method: post
+          integration: lambda-proxy
           cors: true
-          parameters:
-            paths:
-              yearMonth: true
+
+  generatepdf:
+    handler: pdf.generatepdf
+    events:
+      - http:
+          path: getmethepdf
+          method: post
+          cors: true
 
   numeng:
     handler: numeng.numeng
