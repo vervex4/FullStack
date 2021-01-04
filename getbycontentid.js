@@ -3,23 +3,24 @@ const { MongoClient } = require("mongodb");
 
 module.exports.getbycontentid = async (event, context) => {
   let result = "";
-  console.log("input params");
-  console.log(event.pathParameters.contentid);
-
-  let selectedLang = "NumberDetailsEnglish";
-  if (event.pathParameters.lang == 1) selectedLang = "NumberDetailsHindi";
-
-  const url =
-    "mongodb+srv://abuser:Astro@1234@cluster0-1asmv.mongodb.net/test?retryWrites=true&w=majority";
-
-  const client = new MongoClient(url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
   try {
+    console.log("input params");
+    console.log(event.pathParameters.contentid);
+
+    let selectedLang = "NumberDetailsEnglish";
+    if (event.pathParameters.lang == 1) selectedLang = "NumberDetailsHindi";
+
+    const url =
+      "mongodb+srv://abuser:Astro@1234@cluster0-1asmv.mongodb.net/test?retryWrites=true&w=majority";
+
+    const client = new MongoClient(url, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
     if (event.pathParameters.contentid.includes(",")) {
       const newsearchWord = event.pathParameters.contentid.split(",");
-     
+
       await client.connect();
       var resultSet = await client
         .db("AstroBasic")
@@ -101,6 +102,16 @@ module.exports.getbycontentid = async (event, context) => {
     }
   } catch (e) {
     console.error(e);
+    const response = {
+      statusCode: 404,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": true,
+        "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+      },
+      body: JSON.stringify("{ errorMessage: 'No Description found!'}"),
+    };
+    context.succeed(response);
   } finally {
     // client.close();
   }
